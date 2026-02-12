@@ -22,6 +22,12 @@
             overflow: hidden; 
             user-select: none;
             -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;  
+            -ms-user-select: none;      
+            user-select: none;          
+            -webkit-touch-callout: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body::before {
@@ -75,8 +81,8 @@
 
         #radio-widget {
             position: fixed;
-            top: 10px; 
-            left: 10px;
+            bottom: 2px; 
+            left: 2px;
             width: 160px;
             border: 1px solid var(--term-color);
             background: #000;
@@ -755,3 +761,4 @@
     </script>
 </body>
 </html>
+
