@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Emir & Sıla // OS</title>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --term-color: #00ff41; 
+            --accent-color: #ff0055; 
+            --glass: rgba(0, 20, 0, 0.9);
+            --border: 1px solid var(--term-color);
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        body { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-color); 
+            color: #e6edf3; 
+            font-family: var(--font-main); 
+            overflow: hidden; 
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .screen { display: none; height: 100vh; width: 100vw; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; z-index: 10; padding: 10px; box-sizing: border-box; }
+        .active { display: flex; z-index: 100; }
+
+        .glass-box {
+            background: #050505;
+            border: 2px solid var(--term-color);
+            padding: 20px; 
+            border-radius: 5px;
+            box-shadow: 0 0 15px var(--term-color);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border: 1px solid var(--term-color);
+            color: var(--term-color);
+            background: rgba(0, 255, 65, 0.1);
+            cursor: pointer;
+            font-family: var(--font-main);
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 10px;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+        .btn:active { background: var(--term-color); color: black; }
+        
+        .back-btn { 
+            position: absolute; top: 10px; right: 10px; 
+            border: 1px solid var(--accent-color); color: var(--accent-color); 
+            background: #000; z-index: 200; padding: 5px 10px; font-family: var(--font-main);
+        }
+
+        #radio-widget {
+            position: fixed;
+            bottom: 20px; 
+            right: 10px;
+            width: 160px;
+            border: 1px solid var(--term-color);
+            background: #000;
+            z-index: 1000;
+            padding: 5px;
+            display: none; 
+            box-shadow: 0 0 10px var(--term-color);
+        }
+        .radio-screen {
+            background: #111;
+            border: 1px inset #333;
+            color: var(--term-color);
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            padding: 2px;
+            margin-bottom: 5px;
+        }
+        .radio-text {
+            display: inline-block;
+            animation: scroll-left 5s linear infinite;
+        }
+        @keyframes scroll-left {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .radio-btn {
+            width: 100%;
+            background: var(--term-color);
+            color: black;
+            border: none;
+            font-weight: bold;
+            font-size: 10px;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        #terminal-screen { justify-content: flex-start; padding-top: 30px; }
+        #terminal-output { width: 100%; margin-bottom: 20px; text-align: left; }
+        .output-line { color: var(--term-color); text-shadow: 0 0 5px var(--term-color); font-size: 14px; margin-bottom: 5px; }
+        
+        .menu-container { width: 100%; max-width: 400px; display: none; opacity: 0; transition: opacity 1s; }
+        
+        .menu-item {
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 10px;
+            color: #aaa;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            background: rgba(255,255,255,0.05);
+        }
+        .menu-item:active { border-color: var(--term-color); color: var(--term-color); }
+        .menu-item.done { border-color: var(--term-color); color: var(--term-color); }
+        .menu-item.done::after { content: '[OK]'; position: absolute; right: 10px; color: var(--term-color); }
+
+        #btn-letter { border-color: #555; color: #555; transition: all 0.2s; }
+        #btn-letter::after { content: '[LOCKED]'; position: absolute; right: 10px; }
+        #btn-letter.unlocked { border-color: var(--accent-color); color: var(--accent-color); animation: pulse 1.5s infinite; }
+        #btn-letter.unlocked::after { content: '[OPEN]'; }
+
+        #gallery-screen { perspective: 1000px; overflow: hidden; background: #000; }
+        .carousel-container { 
+            position: relative; width: 220px; height: 160px; 
+            transform-style: preserve-3d; transition: transform 0.1s; 
+        }
+        .carousel-item { 
+            position: absolute; width: 220px; height: 160px; 
+            background: #000; border: 2px solid var(--accent-color); 
+            overflow: hidden; opacity: 0.9;
+        }
+        .carousel-item img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-nav { position: absolute; bottom: 50px; color: var(--term-color); animation: blink 1s infinite; pointer-events: none; }
+
+        #grid-container { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; margin: 15px auto; width: 100%; }
+        .grid-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: #111; border: 1px solid #333; cursor: pointer; font-size: 12px; color: #555; }
+        .grid-cell.selected { background: var(--accent-color); color: white; box-shadow: 0 0 10px var(--accent-color); }
+        
+        #fingerprint-area {
+            width: 90px; height: 90px;
+            border: 2px dashed var(--term-color);
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 40px;
+            animation: pulse 2s infinite;
+        }
+        #fingerprint-area.active { border-style: solid; background: rgba(0,255,65,0.2); }
+        
+        .progress-bar { width: 100%; height: 10px; background: #222; margin-top: 15px; border: 1px solid #555; }
+        .progress-fill { height: 100%; width: 0%; background: var(--term-color); }
+
+        #game-canvas { border: 2px solid var(--term-color); background: #000; margin-top: 20px; touch-action: none; width: 100%; max-width: 350px; }
+
+        .capsule-content {
+            text-align: left; font-size: 14px; line-height: 1.6;
+            color: var(--term-color); padding: 10px;
+            border: 1px dashed var(--term-color);
+            max-height: 60vh; overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        #destruct-screen { background: #000; z-index: 9999; color: red; display: none; }
+        #countdown { font-size: 150px; font-weight: bold; margin: 0; text-shadow: 0 0 20px red; }
+        #white-screen { background: white; z-index: 10000; color: black; display: none; }
+
+        #emir-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; display: none; align-items: center; justify-content: center; }
+        .emir-text { font-size: 3rem; color: var(--term-color); text-shadow: 0 0 20px var(--term-color); font-weight: bold; text-align: center; border: 3px solid var(--term-color); padding: 20px; transform: rotate(-5deg); }
+
+        #update-modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            z-index: 9000; background: #000; border: 2px solid var(--accent-color);
+            padding: 20px; width: 90%; max-width: 350px; text-align: center;
+            box-shadow: 0 0 30px var(--accent-color);
+        }
+
+        #particle-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen" class="screen active" style="z-index: 200; background:black;">
+        <div class="glass-box">
+            <h1 style="color: var(--term-color);">SYSTEM DETECTED</h1>
+            <p style="color: #aaa;">Emir&Sıla İşletim Sistemi v14.02</p>
+            <p style="font-size:12px; color:#666;">Güvenlik Protokolü: Sevgi</p>
+            <div class="btn" onclick="startBootSequence()">SİSTEMİ BAŞLAT</div>
+        </div>
+    </div>
+
+    <div id="radio-widget">
+        <div style="font-size:10px; color:#666; margin-bottom:2px;">Love.FM 14.02</div>
+        <div class="radio-screen">
+            <span class="radio-text">🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵🎵</span>
+        </div>
+        <button id="music-btn" class="radio-btn" onclick="toggleMusic()">▶ OYNAT</button>
+        <audio id="bg-music" loop>
+            <source src="sarki.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+
+    <div id="terminal-screen" class="screen">
+        <div id="terminal-output"></div>
+        
+        <div class="menu-container" id="main-menu">
+            <div id="btn-gallery" class="menu-item" onclick="openModule('gallery')">> Galeri</div>
+            <div id="btn-uyum" class="menu-item" onclick="openModule('uyum')">> Uyum sorgula <br>(kimsenin haddine değil)</div>
+            <div id="btn-game" class="menu-item" onclick="openModule('game')">> Aşıkları Yakala</div>
+            <div id="btn-surprise" class="menu-item" onclick="openModule('surprise')">> <3</div>
+            
+            <div id="btn-letter" class="menu-item" onclick="tryOpenLetter()">> Mektup</div>
+
+            <div class="menu-item" style="border-color: red; color: red;" onclick="startSelfDestruct()">> ⚠️ SİSTEMİ İMHA ET</div>
+        </div>
+        
+        <div style="height: 50px; width: 100%;" onclick="showEmirMsg()"></div>
+    </div>
+
+    <div id="update-modal">
+        <h2 style="color: var(--accent-color); animation: blink 1s infinite;">SİSTEM GÜNCELLEMESİ</h2>
+        <p style="color:white; font-size:14px;">Yeni Güncelleme Bulundu: <strong>'Sonsuzluk'</strong></p>
+        <p style="font-size:12px; color:#aaa; margin: 10px 0;">Bu güncelleme "Sonsuza Kadar Beraberlik" modülünü içerir.</p>
+        <p style="color:white; font-size:14px;">Yüklemek istiyor musun?</p>
+        <button class="btn" style="border-color:var(--accent-color); color:var(--accent-color);" onclick="installUpdate()">[ EVET, YÜKLE ]</button>
+    </div>
+
+    <div id="gallery-screen" class="screen">
+        <button class="back-btn" onclick="goHome()">[X] KAPAT</button>
+        <div class="carousel-container" id="carousel">
+            <div class="carousel-item" style="transform: rotateY(0deg) translateZ(250px);"><img src="asd.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(60deg) translateZ(250px);"><img src="asdd.png"></div>
+            <div class="carousel-item" style="transform: rotateY(120deg) translateZ(250px);"><img src="asddd.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(180deg) translateZ(250px);"><img src="asdddd.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(240deg) translateZ(250px);"><img src="asdddddd.png"></div>
+            <div class="carousel-item" style="transform: rotateY(300deg) translateZ(250px);"><img src="asddddd.png"></div>
+        </div>
+        <div class="gallery-nav"> < Parmağınla Döndür > </div>
+    </div>
+
+    <div id="uyum-screen" class="screen">
+        <button class="back-btn" onclick="goHome()">[X] KAPAT</button>
+        
+        <div class="glass-box" id="uyum-step-1">
+            <h3 style="color:var(--term-color)">İSİMLERİMİZİ BUL</h3>
+            <div id="grid-container"></div>
+        </div>
+
+        <div class="glass-box" id="uyum-step-2" style="display:none;">
+            <p style="color:var(--term-color)">Emir parmak izini sisteme yükledi.</p>
+            <p style="font-size:12px; color:#aaa;">Sıra sende, aşağıdaki alana basılı tut:</p>
+            <div id="fingerprint-area" onmousedown="startScan()" onmouseup="stopScan()" ontouchstart="startScan()" ontouchend="stopScan()"> </div>
+            <div class="progress-bar"><div class="progress-fill" id="p-fill"></div></div>
+            <p id="scan-status" style="font-size:12px; margin-top:10px; color:red;"></p>
+        </div>
+
+        <div class="glass-box" id="uyum-step-3" style="display:none;">
+            <h1 style="color:var(--accent-color); font-size: 50px; margin:0;">%100</h1>
+            <h3 style="color:white;">MÜKEMMEL UYUM</h3>
+            <p style="font-size:13px; color:#ccc;">Algoritmalar 8 milyar içinde en iyi eşleşme olduğunu söylüyor.</p>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <button class="back-btn" onclick="stopGame()">[X] BİTİR</button>
+        <div style="position:absolute; top:20px; left:20px; color:var(--term-color); font-size:20px;">SKOR: <span id="score">0</span></div>
+        <p style="position:absolute; bottom:20px; width:100%; text-align:center; color:#666; font-size:12px;">Parmağınla sürükle...</p>
+        <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div id="capsule-screen" class="screen">
+        <button class="back-btn" onclick="closeCapsule()">[X] KAPAT</button>
+        <div class="glass-box">
+            <h2 style="color:var(--term-color)">SILA'YA</h2>
+            <div class="capsule-content">
+                <p><strong>Biricik Sevgilim,</strong></p>
+                <p>Öncelikle bunları kodlarken, gelecekteki bizi hayal ettiğimi bil istiyorum.</p>
+                <p>Bunu okuduğuna göre kodladığım her şeyi denedin demektir. Umarım emeğim hoşuna gitmiştir.</p>
+                <p>Belki bu yazıyı okurken gülümsüyorsundur, belki de “ne ara yapmış bunu götveren” diyorsundur.</p>
+                <p>Küçük bi şey ama benim için anlamlı ve yaparken çok keyif aldım. Çünkü senin için emek vermek hoşuma gidiyor.</p>
+                <p>Ben edebi bi adam (gazapizm) değilim, cümle süslemeyi beceremem ama şunu söyleyebilirim ki seni tahmin edemiceğin kadar çok seviyorum.</p>
+                <p>Hayatıma girdiğinden beri günlerim çok daha keyifli. Artık gelecekle ilgili hayal kurarken o hayalde tek olmuyorum, seni de katıyorum.</p>
+                <p>Sen benim çok büyük bi şansımsın. Aşık olmanın ötesinde en değerlilerimdensin.</p>
+                <p>İyi ki hayatımdasın. İyi ki sevgilim, bebeğim, aşkımsın.</p>
+                <p>Seni seviyorum.</p>
+                <br>
+                <p style="text-align: right;"><em>-Seni seven herif.</em></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="destruct-screen" class="screen">
+        <div id="countdown">10</div>
+        <p style="color:red; animation:blink 0.2s infinite;">SYSTEM FAILURE</p>
+    </div>
+    <div id="white-screen" class="screen">
+        <h1 style="color: black; font-size: 2rem; text-align: center;">Aşkım şakaaa</h1>
+        <h2 style="color: #ff0055; font-size: 1.5rem;">SENİ ÇOK SEVİYORUM</h2>
+        <button class="btn" style="border:1px solid black; color:black; background:transparent; margin-top:20px;" onclick="location.reload()">Sistemi Yeniden Başlat</button>
+    </div>
+
+    <div id="emir-overlay" onclick="this.style.display='none'">
+        <div class="emir-text">EFENDİM AŞKIM? ❤️</div>
+    </div>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <script>
+        const visited = {
+            gallery: false,
+            uyum: false,
+            game: false,
+            surprise: false
+        };
+
+        const output = document.getElementById('terminal-output');
+        const mainMenu = document.getElementById('main-menu');
+
+        const audio = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-btn');
+        let isPlaying = false;
+
+        function toggleMusic() {
+            if (isPlaying) {
+                audio.pause();
+                musicBtn.innerText = "▶ OYNAT";
+                isPlaying = false;
+            } else {
+                audio.play().then(() => {
+                    musicBtn.innerText = "❚❚ DURDUR";
+                    isPlaying = true;
+                }).catch(e => alert("x"));
+            }
+        }
+
+        async function startBootSequence() {
+            document.getElementById('intro-screen').classList.remove('active');
+            document.getElementById('terminal-screen').classList.add('active');
+            
+            document.getElementById('radio-widget').style.display = 'block';
+
+            const lines = [
+                "Initializing LoveOS v14.02...",
+                "Loading User Data: Emir...",
+                "Loading Target Data: Sıla...",
+                "Connection Established [OK].",
+                "------------------------------"
+            ];
+
+            for (let line of lines) {
+                await typeText(line);
+            }
+            
+            mainMenu.style.display = 'block';
+            setTimeout(() => mainMenu.style.opacity = '1', 100);
+        }
+
+        function typeText(text) {
+            return new Promise(resolve => {
+                const div = document.createElement('div');
+                div.className = 'output-line';
+                div.innerText = "> " + text;
+                output.appendChild(div);
+                setTimeout(resolve, 300);
+            });
+        }
+
+        function goHome() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('terminal-screen').classList.add('active');
+            checkLockStatus();
+        }
+
+        function openModule(module) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            
+            if(module === 'gallery') {
+                document.getElementById('gallery-screen').classList.add('active');
+                visited.gallery = true;
+                setupGallery();
+            } else if (module === 'uyum') {
+                document.getElementById('uyum-screen').classList.add('active');
+                setupUyumGrid();
+            } else if (module === 'game') {
+                document.getElementById('game-screen').classList.add('active');
+                visited.game = true;
+                startGame();
+            } else if (module === 'surprise') {
+                visited.surprise = true;
+                goHome(); 
+                triggerHeartExplosion();
+            } else if (module === 'letter') {
+                document.getElementById('capsule-screen').classList.add('active');
+            }
+
+            const btn = document.getElementById('btn-' + module);
+            if(btn) btn.classList.add('done');
+        }
+
+        function closeCapsule() {
+            goHome(); 
+            setTimeout(() => {
+                document.getElementById('update-modal').style.display = 'block';
+            }, 1000);
+        }
+
+        function installUpdate() {
+            document.getElementById('update-modal').style.display = 'none';
+
+            const loader = document.createElement('div');
+            loader.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center;";
+            loader.innerHTML = `
+                <div style="color:#00ff41; font-family:'Courier New'; font-size:16px; margin-bottom:20px; text-align:center;" id="update-text">Yama indiriliyor...</div>
+                <div style="width:80%; height:20px; border:2px solid #00ff41; border-radius:5px; padding:2px;">
+                    <div id="update-bar" style="width:0%; height:100%; background:#00ff41; transition:width 0.2s;"></div>
+                </div>
+            `;
+            document.body.appendChild(loader);
+
+            let width = 0;
+            const texts = ["Sorunlar ayrıştırılıyor...", "Sevgi sonsuzlaştırılıyor...", "Sadakat protokolü kilitleniyor...", "Tamamlanıyor..."];
+            
+            const timer = setInterval(() => {
+                width += Math.random() * 3; 
+                if(width > 100) width = 100;
+                
+                document.getElementById('update-bar').style.width = width + "%";
+                
+                if(width > 20 && width < 50) document.getElementById('update-text').innerText = texts[0];
+                if(width > 50 && width < 80) document.getElementById('update-text').innerText = texts[1];
+                if(width > 80) document.getElementById('update-text').innerText = texts[2];
+
+                if(width >= 100) {
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        loader.remove(); 
+                        triggerHeartExplosion(); 
+                        
+                        const msg = document.createElement('div');
+                        msg.style.position = 'fixed';
+                        msg.style.top = '50%';
+                        msg.style.left = '50%';
+                        msg.style.transform = 'translate(-50%, -50%)';
+                        msg.style.background = 'rgba(0,0,0,0.95)';
+                        msg.style.padding = '30px';
+                        msg.style.border = '2px solid #ff0055';
+                        msg.style.zIndex = '10001';
+                        msg.style.textAlign = 'center';
+                        msg.style.borderRadius = '10px';
+                        msg.style.boxShadow = '0 0 50px #ff0055';
+                        msg.innerHTML = '<h2 style="color:#ff0055; margin-bottom:15px; font-family:Courier New;">GÜNCELLEME BAŞARILI</h2><p style="color:white; font-size:16px; font-family:Courier New;">"Seni her gün daha fazla seveceğim" sözü sisteme kalıcı olarak eklendi.</p><br><button class="btn" style="border-color:#ff0055; color:#ff0055;" onclick="this.parentElement.remove()">TAMAM AŞKIM</button>';
+                        document.body.appendChild(msg);
+                    }, 500);
+                }
+            }, 100);
+        }
+
+        function checkLockStatus() {
+            const allDone = visited.gallery && visited.uyum && visited.game && visited.surprise;
+            const letterBtn = document.getElementById('btn-letter');
+            
+            if (allDone) {
+                letterBtn.classList.remove('locked');
+                letterBtn.classList.add('unlocked');
+            }
+        }
+
+        function tryOpenLetter() {
+            const letterBtn = document.getElementById('btn-letter');
+            if (!letterBtn.classList.contains('unlocked')) {
+                alert("Önce tüm görevleri tamamla :)");
+            } else {
+                openModule('letter');
+            }
+        }
+
+        let galleryAngle = 0;
+        let startX = 0;
+        function setupGallery() {
+            const container = document.getElementById('carousel');
+            const items = document.querySelectorAll('.carousel-item');
+            const angleStep = 360 / items.length;
+            const radius = 220; 
+
+            items.forEach((item, index) => {
+                const angle = index * angleStep;
+                item.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+            });
+
+            const screen = document.getElementById('gallery-screen');
+            screen.ontouchstart = (e) => { startX = e.touches[0].clientX; };
+            screen.ontouchmove = (e) => {
+                const currentX = e.touches[0].clientX;
+                const diff = startX - currentX;
+                galleryAngle -= diff * 0.5; 
+                container.style.transform = `rotateY(${galleryAngle}deg)`;
+                startX = currentX;
+            };
+        }
+
+        const names = ['E', 'M', 'I', 'R', 'S', 'I', 'L', 'A'];
+        function setupUyumGrid() {
+            document.getElementById('uyum-step-1').style.display = 'block';
+            document.getElementById('uyum-step-2').style.display = 'none';
+            document.getElementById('uyum-step-3').style.display = 'none';
+            
+            let selectedCount = 0;
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+            
+            const targetIndices = [12, 13, 14, 15, 84, 85, 86, 87];
+
+            for(let i=0; i<100; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'grid-cell';
+                
+                if (i === 12) cell.innerText = 'E';
+                else if (i === 13) cell.innerText = 'M';
+                else if (i === 14) cell.innerText = 'I';
+                else if (i === 15) cell.innerText = 'R';
+                else if (i === 84) cell.innerText = 'S';
+                else if (i === 85) cell.innerText = 'I';
+                else if (i === 86) cell.innerText = 'L';
+                else if (i === 87) cell.innerText = 'A';
+                else {
+                    const randoms = "XYZW0123456789@#$%&";
+                    cell.innerText = randoms[Math.floor(Math.random() * randoms.length)];
+                }
+
+                cell.onclick = function() {
+                    if (targetIndices.includes(i)) {
+                        if (!this.classList.contains('selected')) {
+                            this.classList.add('selected');
+                            selectedCount++;
+                            if (selectedCount >= 8) {
+                                setTimeout(() => {
+                                    document.getElementById('uyum-step-1').style.display = 'none';
+                                    document.getElementById('uyum-step-2').style.display = 'block';
+                                }, 500);
+                            }
+                        }
+                    } else {
+                        this.style.background = 'red';
+                        setTimeout(() => this.style.background = '#111', 200);
+                    }
+                }
+                container.appendChild(cell);
+            }
+        }
+
+        let scanTimer;
+        let progress = 0;
+        function startScan() {
+            const fingerprint = document.getElementById('fingerprint-area');
+            const fill = document.getElementById('p-fill');
+            const status = document.getElementById('scan-status');
+            
+            fingerprint.classList.add('active');
+            status.innerText = "Yükleniyor...";
+            progress = 0;
+
+            scanTimer = setInterval(() => {
+                progress += Math.random() * 5;
+                fill.style.width = progress + "%";
+                
+                if (progress >= 100) {
+                    clearInterval(scanTimer);
+                    status.innerText = "Eşleşme Tamamlandı!";
+                    visited.uyum = true; 
+                    setTimeout(() => {
+                        document.getElementById('uyum-step-2').style.display = 'none';
+                        document.getElementById('uyum-step-3').style.display = 'block';
+                        triggerHeartExplosion();
+                    }, 500);
+                }
+            }, 100);
+        }
+
+        function stopScan() {
+            if (progress < 100) {
+                clearInterval(scanTimer);
+                document.getElementById('fingerprint-area').classList.remove('active');
+                document.getElementById('p-fill').style.width = "0%";
+                document.getElementById('scan-status').innerText = "Başarısız. Parmağını çekme aşkım.";
+            }
+        }
+
+        let gameRunning = false;
+        const gCanvas = document.getElementById('game-canvas');
+        const gCtx = gCanvas.getContext('2d');
+        gCanvas.width = 300; gCanvas.height = 400;
+        let player = {x: 150, y: 350, w:50, h:50}; 
+        let items = [];
+        let score = 0;
+        const heartImg = new Image();
+        heartImg.src = 'ask.png';
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            items = [];
+            gameLoop();
+        }
+        function stopGame() { gameRunning = false; goHome(); }
+        
+        gCanvas.addEventListener('touchmove', e => {
+            e.preventDefault(); 
+            var rect = gCanvas.getBoundingClientRect();
+            var touch = e.touches[0];
+            player.x = touch.clientX - rect.left;
+        }, {passive: false});
+
+        function gameLoop() {
+            if(!gameRunning) return;
+            gCtx.clearRect(0,0, gCanvas.width, gCanvas.height);
+            gCtx.fillStyle = '#00ff41';
+            gCtx.fillRect(player.x - 25, player.y, 50, 10);
+            gCtx.fillStyle = '#fff';
+            gCtx.font = "20px Arial";
+            gCtx.fillText("U", player.x - 7, player.y + 8);
+
+            if(Math.random() < 0.03) {
+                items.push({x:Math.random()*gCanvas.width, y:-20, type: Math.random()>0.2?'ask':'broken', spd: Math.random()*3+2});
+            }
+            items.forEach((item, index) => {
+                item.y += item.spd;
+                if (item.type === 'ask') {
+                    gCtx.drawImage(heartImg, item.x, item.y, 40, 40); 
+                } else {
+                    gCtx.font = "30px Arial";
+                    gCtx.fillText("💔", item.x, item.y);
+                }
+                if(Math.abs(item.x - player.x) < 50 && item.y > player.y - 30 && item.y < player.y + 30) {
+                    if(item.type === 'ask') {
+                        score += 10; 
+                        items.splice(index, 1);
+                    } else {
+                        gameRunning = false;
+                        alert("Kırık kalpten kaçsana çakal. Skor: " + score);
+                        goHome();
+                    }
+                }
+            });
+            document.getElementById('score').innerText = score;
+            requestAnimationFrame(gameLoop);
+        }
+
+        function triggerHeartExplosion() {
+            const symbols = ['❤️', '💖', '🌹', '🌺', '✨'];
+            let wave = 0;
+            const interval = setInterval(() => {
+                wave++;
+                for(let i=0; i<30; i++) {
+                    let d = document.createElement('div');
+                    d.innerHTML = symbols[Math.floor(Math.random() * symbols.length)];
+                    d.style.position = 'fixed';
+                    d.style.left = (Math.random() * 100) + '%';
+                    d.style.top = (Math.random() * 100) + '%';
+                    d.style.transform = 'scale(0)';
+                    d.style.fontSize = (Math.random() * 40 + 20) + 'px'; 
+                    d.style.transition = 'all 2s ease-out';
+                    d.style.zIndex = '9999';
+                    d.style.pointerEvents = 'none'; 
+                    document.body.appendChild(d);
+                    setTimeout(() => {
+                        d.style.transform = `translate(${Math.random()*200-100}px, ${Math.random()*200-100}px) scale(1.5)`;
+                        d.style.opacity = '0';
+                    }, 50);
+                    setTimeout(() => d.remove(), 2000);
+                }
+                if (wave >= 10) clearInterval(interval);
+            }, 300);
+        }
+
+        function startSelfDestruct() {
+            const ds = document.getElementById('destruct-screen');
+            ds.style.display = 'flex';
+            ds.classList.add('active');
+            let count = 10;
+            const el = document.getElementById('countdown');
+            const interval = setInterval(() => {
+                count--;
+                el.innerText = count;
+                if(count <= 0) {
+                    clearInterval(interval);
+                    ds.style.display = 'none';
+                    document.getElementById('white-screen').style.display = 'flex';
+                }
+            }, 1000);
+        }
+
+        function showEmirMsg() {
+            const overlay = document.getElementById('emir-overlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => { overlay.style.display = 'none'; }, 2000); 
+        }
+
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        let particles = [];
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                this.color = `rgba(0, 255, 65, ${Math.random() * 0.5})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if(this.size > 0.2) this.size -= 0.005; 
+                if(this.size <= 0.2) { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.size = 2; }
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        for(let i=0; i<50; i++) particles.push(new Particle());
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    </script>
+</body>
+</html>
