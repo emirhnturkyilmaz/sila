@@ -257,6 +257,13 @@
     <div id="gallery-screen" class="screen">
         <button class="back-btn" onclick="goHome()">[X] KAPAT</button>
         <div class="carousel-container" id="carousel">
+            <div class="carousel-item" style="transform: rotateY(0deg) translateZ(250px);"><img src="q.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(60deg) translateZ(250px);"><img src="w.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(120deg) translateZ(250px);"><img src="e.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(180deg) translateZ(250px);"><img src="r.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(240deg) translateZ(250px);"><img src="t.jpeg"></div>
+            <div class="carousel-item" style="transform: rotateY(300deg) translateZ(250px);"><img src="y.png"></div>
+            
             <div class="carousel-item" style="transform: rotateY(0deg) translateZ(250px);"><img src="asd.jpeg"></div>
             <div class="carousel-item" style="transform: rotateY(60deg) translateZ(250px);"><img src="asdd.png"></div>
             <div class="carousel-item" style="transform: rotateY(120deg) translateZ(250px);"><img src="asddd.jpeg"></div>
@@ -508,12 +515,17 @@
         function setupGallery() {
             const container = document.getElementById('carousel');
             const items = document.querySelectorAll('.carousel-item');
-            const angleStep = 360 / items.length;
-            const radius = 220; 
-
+            
             items.forEach((item, index) => {
-                const angle = index * angleStep;
-                item.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+                let angle, yPos;
+                if (index < 6) {
+                     angle = index * 60;
+                     yPos = -100; 
+                } else {
+                     angle = (index - 6) * 60;
+                     yPos = 100;
+                }
+                item.style.transform = `rotateY(${angle}deg) translateZ(250px) translateY(${yPos}px)`;
             });
 
             const screen = document.getElementById('gallery-screen');
@@ -761,4 +773,3 @@
     </script>
 </body>
 </html>
-
